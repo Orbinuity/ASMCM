@@ -1,5 +1,5 @@
 #!/bin/python3
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 import sys
 try:
     import argparse
@@ -20,7 +20,7 @@ reg = {
     'ret': 0
 }
 
-ACC_VERSION = "1.0"
+ACC_VERSION = "1.1"
 MAGIC_HEADER = (b"ACX"+ACC_VERSION.split(".")[0].encode())
 
 # Tools
@@ -53,25 +53,25 @@ class AssemblyCraftCompiler:
     }
 
     OPCODES = {
-        'mov':     0x01, # 1
-        'push':    0x02, # 2
-        'pop':     0x03, # 3
-        'call':    0x04, # 4
-        'ret':     0x05, # 5
-        'cmp':     0x06, # 6
-        'jmp':     0x07, # 7
-        'je':      0x08, # 8
-        'jne':     0x09, # 9
-        'jg':      0x0A, # 10
-        'jl':      0x0B, # 11
-        'jge':     0x0C, # 12
-        'jle':     0x0D, # 13
-        'xor':     0x0E, # 14
-        'add':     0x0F, # 15
-        'sub':     0x10, # 16
-        'mul':     0x11, # 17
-        'div':     0x12, # 18
-        'syscall': 0x13  # 19
+        'mov':     0x01,
+        'push':    0x02,
+        'pop':     0x03,
+        'call':    0x04,
+        'ret':     0x05,
+        'cmp':     0x06,
+        'jmp':     0x07,
+        'je':      0x08,
+        'jne':     0x09,
+        'jg':      0x0A,
+        'jl':      0x0B,
+        'jge':     0x0C,
+        'jle':     0x0D,
+        'xor':     0x0E,
+        'add':     0x0F,
+        'sub':     0x10,
+        'mul':     0x11,
+        'div':     0x12,
+        'syscall': 0x13
     }
 
     ARG_TYPE_REG = 0x01
@@ -158,7 +158,6 @@ class AssemblyCraftCompiler:
             else:
                 cleaned_instructions.append(line)
                 parts = line.split(maxsplit=1)
-                mnemonic = parts[0].lower()
                 args_str = parts[1] if len(parts) > 1 else ""
                 num_args = len([a.strip() for a in args_str.split(',')]) if args_str else 0
                 bytecode_offset += 1 + (num_args * 5)
@@ -269,19 +268,16 @@ class RAM:
     def deref_register(self, reg_value) -> str:
         if isinstance(reg_value, bytes):
             return reg_value.decode('utf-8', errors='ignore').rstrip('\x00\n')
-        
         if isinstance(reg_value, str):
             return reg_value
         
         ram_data = self.read_from_ram(reg_value)
-
         if ram_data:
             return ram_data.decode('utf-8', errors='ignore').rstrip('\x00\n')
         elif isinstance(reg_value, int) and 1 <= reg_value <= 255:
             return chr(reg_value)
         else:
             return str(reg_value)
-
 
 class CPU:
     ARG_TYPE_REG = 0x01
@@ -333,7 +329,7 @@ class CPU:
             opcode = bytecode[self.ip]
             self.ip += 1
 
-            if opcode == 0x01:  # mov
+            if opcode == 0x01:    # mov
                 d_type, d_val = self._fetch_operand()
                 s_type, s_val = self._fetch_operand()
                 src_res = self._resolve_val(s_type, s_val)
@@ -530,16 +526,24 @@ def _main():
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Show this help message and exit")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}", help="Show the ASMCM version and exit")
     parser.add_argument("-V", "--accversion", action="version", version=f"ACC {ACC_VERSION}", help="Show the acc version and exit")
-    parser.add_argument("asmc_file", type=str, nargs='?', default=None, help="Path to your ASMC file (optional)")
-    parser.add_argument("asmcx_file", type=str, help="Path to the new ASMCX file")
+    parser.add_argument("input_file", type=str, nargs='?', default=None, help="Path to ASMC (.asmc) or ASMCX (.asmcx) file")
+    parser.add_argument("output_file", type=str, nargs='?', default=None, help="Output path when compiling")
 
     args = parser.parse_args()
 
-    if args.asmc_file:
-        compile_asmc(args.asmc_file, args.asmcx_file)
-    else:
-        execute_asmc(args.asmcx_file)
+    if not args.input_file:
+        parser.print_help()
+        sys.exit(0)
 
+    if args.input_file.endswith(".asmcx") and not args.output_file:
+        execute_asmc(args.input_file)
+    elif args.input_file.endswith(".asmc"):
+        out_path = args.output_file if args.output_file else args.input_file + "x"
+        compile_asmc(args.input_file, out_path)
+    elif args.output_file:
+        compile_asmc(args.input_file, args.output_file)
+    else:
+        execute_asmc(args.input_file)
 
 if __name__ == "__main__":
     _main()
