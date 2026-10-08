@@ -1,0 +1,79 @@
+name: Build and Release Binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_name: asmcm-linux
+            pyinstaller_cmd: pyinstaller --onefile --name asmcm-linux app.py
+          - os: macos-latest
+            asset_name: asmcm-macos
+            pyinstaller_cmd: pyinstaller --onefile --name asmcm-macos app.py
+          - os: windows-latest
+            asset_name: asmcm-windows.exe
+            pyinstaller_cmd: pyinstaller --onefile --name asmcm-windows app.py
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; pip install pyinstaller==6.21.0; fi
+        shell: bash
+
+      - name: Build Binary with PyInstaller
+        run: ${{ matrix.pyinstaller_cmd }}
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: dist/${{ matrix.asset_name }}
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: README.md
+          files: |
+            release-assets/*
+            app.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
