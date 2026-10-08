@@ -19,13 +19,13 @@ jobs:
         include:
           - os: ubuntu-latest
             asset_name: asmcm-linux
-            pyinstaller_cmd: pyinstaller --onefile --name asmcm-linux app.py
+            pyinstaller_cmd: pyinstaller --onefile --icon=assets/app.png --name asmcm-linux app.py
           - os: macos-latest
             asset_name: asmcm-macos
-            pyinstaller_cmd: pyinstaller --onefile --name asmcm-macos app.py
+            pyinstaller_cmd: pyinstaller --onefile --icon=assets/app.icns --name asmcm-macos app.py
           - os: windows-latest
             asset_name: asmcm-windows.exe
-            pyinstaller_cmd: pyinstaller --onefile --name asmcm-windows app.py
+            pyinstaller_cmd: pyinstaller --onefile --icon=assets/app.ico --name asmcm-windows app.py
 
     steps:
       - name: Checkout Code
@@ -40,7 +40,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; pip install pyinstaller==6.21.0; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         shell: bash
 
       - name: Build Binary with PyInstaller
@@ -67,7 +67,7 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Create Release and Upload Binaries
+      - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
@@ -75,5 +75,9 @@ jobs:
           files: |
             release-assets/*
             app.py
+            install.sh
+            install.ps1
+            uninstall.sh
+            uninstall.ps1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
