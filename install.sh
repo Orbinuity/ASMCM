@@ -5,7 +5,8 @@ REPO="Orbinuity/ASMCM"
 APP_NAME="ASMCM"
 BINARY_NAME="asmcm"
 INSTALL_DIR="$HOME/.local/bin"
-INSTALLER_VERSION="1.1.0-posix"
+INSTALLER_VERSION="1.2.0-posix"
+ASSETS_URL="https://raw.githubusercontent.com/${REPO}/main/assets"
 
 BOLD=$(printf '\033[1m')
 GREEN=$(printf '\033[0;32m')
@@ -30,18 +31,6 @@ if [ -z "$LATEST_TAG" ]; then
 fi
 
 TARGET_BINARY="$INSTALL_DIR/$BINARY_NAME"
-
-if [ -f "$TARGET_BINARY" ]; then
-    LOCAL_VERSION=$("$TARGET_BINARY" --version 2>/dev/null | head -n 1 || true)
-    
-    if [ -n "$LOCAL_VERSION" ] && echo "$LOCAL_VERSION" | grep -q "$LATEST_TAG"; then
-        success "$APP_NAME is already installed and up to date (${BOLD}${LATEST_TAG}${NC})!"
-        printf "\n"
-        exit 0
-    else
-        warn "Found existing installation. Upgrading to ${BOLD}${LATEST_TAG}${NC}..."
-    fi
-fi
 
 OS="$(uname -s)"
 case "${OS}" in
@@ -71,18 +60,31 @@ chmod +x "$TMP_DIR/$BINARY_NAME"
 mv "$TMP_DIR/$BINARY_NAME" "$TARGET_BINARY"
 success "Successfully installed ${APP_NAME} (${LATEST_TAG}) to ${INSTALL_DIR}"
 
-# --- Linux File Association ---
+# --- Linux File Associations and Icons ---
 if [ "$OS_ASSET" = "linux" ]; then
-    info "Configuring .asmcx file association for Linux..."
+    info "Setting up icons and file associations for Linux..."
     DESKTOP_DIR="$HOME/.local/share/applications"
     MIME_DIR="$HOME/.local/share/mime/packages"
-    mkdir -p "$DESKTOP_DIR" "$MIME_DIR"
+    ICON_APP_DIR="$HOME/.local/share/icons/hicolor/64x64/apps"
+    ICON_MIME_DIR="$HOME/.local/share/icons/hicolor/64x64/mimetypes"
+    
+    mkdir -p "$DESKTOP_DIR" "$MIME_DIR" "$ICON_APP_DIR" "$ICON_MIME_DIR"
+
+    curl -sL "$ASSETS_URL/app.png" -o "$ICON_APP_DIR/asmcm.png" || true
+    curl -sL "$ASSETS_URL/asmc.png" -o "$ICON_MIME_DIR/application-x-asmc.png" || true
+    curl -sL "$ASSETS_URL/asmcx.png" -o "$ICON_MIME_DIR/application-x-asmcx.png" || true
 
     cat <<EOF > "$MIME_DIR/asmcm.xml"
 <?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-asmc">
+    <comment>ASMC Source File</comment>
+    <icon name="application-x-asmc"/>
+    <glob pattern="*.asmc"/>
+  </mime-type>
   <mime-type type="application/x-asmcx">
-    <comment>ASMCX File</comment>
+    <comment>ASMC Executable File</comment>
+    <icon name="application-x-asmcx"/>
     <glob pattern="*.asmcx"/>
   </mime-type>
 </mime-info>
@@ -93,8 +95,9 @@ EOF
 Type=Application
 Name=ASMCM
 Exec=$TARGET_BINARY %f
+Icon=asmcm
 Terminal=true
-MimeType=application/x-asmcx;
+MimeType=application/x-asmc;application/x-asmcx;
 NoDisplay=true
 EOF
 
@@ -102,16 +105,20 @@ EOF
         update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1 || true
     fi
     if command -v xdg-mime >/dev/null 2>&1; then
-        xdg-mime default asmcm.desktop application/x-asmcx >/dev/null 2>&1 || true
+        xdg-mime default asmcm.desktop application/x-asmc application/x-asmcx >/dev/null 2>&1 || true
     fi
-    success "File association registered for .asmcx"
+    success "File associations and icons configured."
 fi
 
-# --- macOS File Association ---
+# --- macOS File Associations and Icons ---
 if [ "$OS_ASSET" = "macos" ]; then
-    info "Configuring .asmcx file association for macOS..."
+    info "Setting up icons and App handler for macOS..."
     MAC_APP_DIR="$HOME/Applications/ASMCM.app"
     mkdir -p "$MAC_APP_DIR/Contents/MacOS" "$MAC_APP_DIR/Contents/Resources"
+
+    curl -sL "$ASSETS_URL/app.icns" -o "$MAC_APP_DIR/Contents/Resources/app.icns" || true
+    curl -sL "$ASSETS_URL/asmc.icns" -o "$MAC_APP_DIR/Contents/Resources/asmc.icns" || true
+    curl -sL "$ASSETS_URL/asmcx.icns" -o "$MAC_APP_DIR/Contents/Resources/asmcx.icns" || true
 
     cat <<EOF > "$MAC_APP_DIR/Contents/MacOS/ASMCM"
 #!/bin/sh
@@ -130,6 +137,8 @@ EOF
 <dict>
     <key>CFBundleExecutable</key>
     <string>ASMCM</string>
+    <key>CFBundleIconFile</key>
+    <string>app.icns</string>
     <key>CFBundleIdentifier</key>
     <string>com.orbinuity.asmcm</string>
     <key>CFBundleName</key>
@@ -141,10 +150,24 @@ EOF
         <dict>
             <key>CFBundleTypeExtensions</key>
             <array>
+                <string>asmc</string>
+            </array>
+            <key>CFBundleTypeIconFile</key>
+            <string>asmc.icns</string>
+            <key>CFBundleTypeName</key>
+            <string>ASMC Source File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
+        <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array>
                 <string>asmcx</string>
             </array>
+            <key>CFBundleTypeIconFile</key>
+            <string>asmcx.icns</string>
             <key>CFBundleTypeName</key>
-            <string>ASMCX File</string>
+            <string>ASMC Executable File</string>
             <key>CFBundleTypeRole</key>
             <string>Viewer</string>
         </dict>
@@ -157,7 +180,7 @@ EOF
     if [ -f "$LSREGISTER" ]; then
         "$LSREGISTER" -f "$MAC_APP_DIR" >/dev/null 2>&1 || true
     fi
-    success "Registered macOS App Handler for .asmcx"
+    success "Registered macOS App Handler & icons."
 fi
 
 case ":$PATH:" in
