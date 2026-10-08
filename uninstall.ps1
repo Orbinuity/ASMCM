@@ -1,6 +1,6 @@
 $AppName = "ASMCM"
 $InstallDir = "$env:LOCALAPPDATA\Programs\$AppName"
-$UninstallerVersion = "1.0.0-windows"
+$UninstallerVersion = "1.2.0-windows"
 
 Write-Host "`n=== $AppName Uninstaller v$UninstallerVersion ===" -ForegroundColor Cyan
 
@@ -11,11 +11,21 @@ if (Test-Path $InstallDir) {
     Write-Host "[!] $AppName was not found." -ForegroundColor Yellow
 }
 
-# Clean up .asmcx registry associations
-$ExtKey = "HKCU:\Software\Classes\.asmcx"
-$ProgKey = "HKCU:\Software\Classes\ASMCM.File"
+# Clean up registry entries
+$Keys = @(
+    "HKCU:\Software\Classes\.asmc",
+    "HKCU:\Software\Classes\.asmcx",
+    "HKCU:\Software\Classes\ASMCM.AsmcFile",
+    "HKCU:\Software\Classes\ASMCM.AsmcxFile"
+)
 
-if (Test-Path $ExtKey) { Remove-Item -Recurse -Force $ExtKey -ErrorAction SilentlyContinue }
-if (Test-Path $ProgKey) { Remove-Item -Recurse -Force $ProgKey -ErrorAction SilentlyContinue }
+foreach ($Key in $Keys) {
+    if (Test-Path $Key) {
+        Remove-Item -Recurse -Force $Key -ErrorAction SilentlyContinue
+    }
+}
 
-Write-Host "[✓] File association cleaned up." -ForegroundColor Green
+# Refresh Icon Cache
+ie4uinit.exe -show 2>$null
+
+Write-Host "[✓] File associations and registry cleaned up." -ForegroundColor Green
