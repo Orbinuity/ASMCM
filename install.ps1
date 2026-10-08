@@ -6,7 +6,9 @@ $AppName = "ASMCM"
 $BinaryName = "$AppId.exe"
 $InstallDir = "$env:LOCALAPPDATA\Programs\$AppName"
 $TargetBinary = "$InstallDir\$BinaryName"
-$InstallerVersion = "1.0.0-windows"
+$AssetsDir = "$InstallDir\assets"
+$InstallerVersion = "1.2.0-windows"
+$AssetsUrl = "https://raw.githubusercontent.com/$Repo/main/assets"
 
 function Write-Header ($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 function Write-Success ($msg) { Write-Host "[✓] $msg" -ForegroundColor Green }
@@ -24,22 +26,6 @@ try {
     Write-Err "Failed to reach GitHub API: $_"
 }
 
-if (Test-Path $TargetBinary) {
-    try {
-        $LocalVersion = & $TargetBinary --version 2>$null
-    } catch {
-        $LocalVersion = ""
-    }
-
-    if ($LocalVersion -and $LocalVersion.Contains($LatestTag)) {
-        Write-Success "$AppName is already installed and up to date ($LatestTag)!"
-        Write-Host ""
-        exit 0
-    } else {
-        Write-Warn "Existing installation detected. Upgrading to $LatestTag..."
-    }
-}
-
 $Asset =$Release.assets | Where-Object { $_.name -like "*windows*" -or $_.name -like "*.exe" } | Select-Object -First 1
 
 if (-not $Asset) {
@@ -50,6 +36,9 @@ Write-Info "Downloading $AppName$LatestTag..."
 if (-not (Test-Path $InstallDir)) {
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 }
+if (-not (Test-Path $AssetsDir)) {
+    New-Item -ItemType Directory -Force -Path $AssetsDir | Out-Null
+}
 
 try {
     Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile$TargetBinary
@@ -58,6 +47,15 @@ try {
     Write-Err "Failed to download binary: $_"
 }
 
+# Download Icons
+Write-Info "Downloading file and application icons..."
+try {
+    Invoke-WebRequest -Uri "$AssetsUrl/app.ico" -OutFile "$AssetsDir\app.ico" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "$AssetsUrl/asmc.ico" -OutFile "$AssetsDir\asmc.ico" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "$AssetsUrl/asmcx.ico" -OutFile "$AssetsDir\asmcx.ico" -ErrorAction SilentlyContinue
+} catch {}
+
+# Register PATH
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($UserPath -notlike "*$InstallDir*") {
     Write-Info "Adding $InstallDir to User PATH..."
@@ -66,22 +64,37 @@ if ($UserPath -notlike "*$InstallDir*") {
     Write-Warn "PATH updated. Restart open terminals for changes to take effect."
 }
 
-# Register .asmcx file association in HKCU (no admin required)
-Write-Info "Configuring .asmcx file association..."
+# Register Registry Entries & Icons
+Write-Info "Registering .asmc and .asmcx file associations and icons..."
 try {
-    $ExtKey = "HKCU:\Software\Classes\.asmcx"
-    $ProgKey = "HKCU:\Software\Classes\ASMCM.File"
+    # .asmc file association
+    New-Item -Path "HKCU:\Software\Classes\.asmc" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\.asmc" -Name "(Default)" -Value "ASMCM.AsmcFile" | Out-Null
+    
+    New-Item -Path "HKCU:\Software\Classes\ASMCM.AsmcFile\DefaultIcon" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\ASMCM.AsmcFile\DefaultIcon" -Name "(Default)" -Value "$AssetsDir\asmc.ico" | Out-Null
+    
+    New-Item -Path "HKCU:\Software\Classes\ASMCM.AsmcFile\shell\open\command" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\ASMCM.AsmcFile" -Name "(Default)" -Value "ASMC Source File" | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\ASMCM.AsmcFile\shell\open\command" -Name "(Default)" -Value """$TargetBinary"" ""%1""" | Out-Null
 
-    New-Item -Path $ExtKey -Force | Out-Null
-    Set-ItemProperty -Path $ExtKey -Name "(Default)" -Value "ASMCM.File" | Out-Null
+    # .asmcx file association
+    New-Item -Path "HKCU:\Software\Classes\.asmcx" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\.asmcx" -Name "(Default)" -Value "ASMCM.AsmcxFile" | Out-Null
+    
+    New-Item -Path "HKCU:\Software\Classes\ASMCM.AsmcxFile\DefaultIcon" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\ASMCM.AsmcxFile\DefaultIcon" -Name "(Default)" -Value "$AssetsDir\asmcx.ico" | Out-Null
+    
+    New-Item -Path "HKCU:\Software\Classes\ASMCM.AsmcxFile\shell\open\command" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\ASMCM.AsmcxFile" -Name "(Default)" -Value "ASMC Executable File" | Out-Null
+    Set-ItemProperty -Path "HKCU:\Software\Classes\ASMCM.AsmcxFile\shell\open\command" -Name "(Default)" -Value """$TargetBinary"" ""%1""" | Out-Null
 
-    New-Item -Path "$ProgKey\shell\open\command" -Force | Out-Null
-    Set-ItemProperty -Path $ProgKey -Name "(Default)" -Value "ASMCM File" | Out-Null
-    Set-ItemProperty -Path "$ProgKey\shell\open\command" -Name "(Default)" -Value """$TargetBinary"" ""%1""" | Out-Null
+    # Refresh Windows Shell Icon Cache
+    ie4uinit.exe -show 2>$null
 
-    Write-Success ".asmcx file association registered."
+    Write-Success "File associations and icons registered."
 } catch {
-    Write-Warn "Could not set registry file association: $_"
+    Write-Warn "Could not set registry file associations: $_"
 }
 
 Write-Success "Installation complete!"
