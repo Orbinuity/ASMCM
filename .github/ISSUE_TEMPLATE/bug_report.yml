@@ -1,0 +1,49 @@
+name: Bug Report
+description: Report a bug with the code.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill out all required sections below to help us diagnose and fix the issue.
+
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Explanation
+      description: Describe what happened, what you expected to happen, and steps to reproduce.
+      placeholder: Describe the bug in detail
+    validations:
+      required: true
+
+  - type: upload
+    id: asmc-file
+    attributes:
+      label: ASMC File (Optional)
+      description: Drag and drop `.asmc` file if it was used.
+    validations:
+      required: false
+
+  - type: upload
+    id: asmcx-file
+    attributes:
+      label: ASMCX File (Optional)
+      description: Drag and drop a `.zip` file containing your `.asmcx` file if it was used.
+    validations:
+      required: false
+
+  - type: textarea
+    id: command-logs
+    attributes:
+      label: Command Logs
+      description: Paste the console output here
+      placeholder: Paste the console output here
+      render: text
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        You can add other labels if you want.
