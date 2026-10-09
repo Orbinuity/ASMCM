@@ -1,5 +1,5 @@
 #!/bin/python3
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 try:
     from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFontComboBox, QSpinBox, QCheckBox, QDialogButtonBox, QWidget, QPushButton, QLabel, QSplitter, QTableWidget, QTableWidgetItem, QHeaderView
     from PyQt6.QtGui import QIcon, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QFontMetrics, QAction, QKeySequence, QPainter, QImage, QTextCursor
@@ -1209,10 +1209,10 @@ def open_app(asmc: str = None, asmcx: str = None):
     app.exec()
 
 def main():
-    parser = argparse.ArgumentParser(description="Compile & Run ASMC scripts", prog="ASMCM", add_help=False)
+    parser = argparse.ArgumentParser(description="Compile & Run ASMC scripts", prog="asmcm", add_help=False)
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Show this help message and exit")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}", help="Show the ASMCM version and exit")
-    parser.add_argument("-V", "--accversion", action="version", version=f"ACC {asmcc.__version__}", help="Show the acc version and exit")
+    parser.add_argument("-V", "--accversion", action="version", version=f"ASMCC {asmcc.__version__}", help="Show the ASMCC version and exit")
     parser.add_argument("-t", "--terminal", action='store_true', help="Dont open the GUI")
     parser.add_argument("input_file", type=str, nargs='?', default=None, help="Path to ASMC (.asmc) or ASMCX (.asmcx) file")
     parser.add_argument("output_file", type=str, nargs='?', default=None, help="Output path when compiling")
