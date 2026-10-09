@@ -1,5 +1,5 @@
 #!/bin/python3
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 try:
     from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFontComboBox, QSpinBox, QCheckBox, QDialogButtonBox, QWidget, QPushButton, QLabel, QSplitter, QTableWidget, QTableWidgetItem, QHeaderView
     from PyQt6.QtGui import QIcon, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QFontMetrics, QAction, QKeySequence, QPainter, QImage, QTextCursor
