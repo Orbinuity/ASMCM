@@ -1,0 +1,48 @@
+section .data
+    os_banner   db "ASMC Bare-Metal Kernel Booted!"
+    disk_buffer dm 512  ; 512-byte raw sector buffer
+
+section .text
+main:
+    ; -------------------------------------------------------------
+    ; 1. Hardware Display Mode Switch via MMIO (0xFF008)
+    ; Write 1 to 0xFF008 to enable 320x200 256-Color Graphics Mode
+    ; -------------------------------------------------------------
+    mov rdi, 0xFF008
+    mov rax, 1
+    push rax            ; Pushing write byte to MMIO space
+
+    ; -------------------------------------------------------------
+    ; 2. Read Real-Time Hardware Clock via MMIO (0xFF004)
+    ; -------------------------------------------------------------
+    mov rsi, 0xFF004
+
+    ; -------------------------------------------------------------
+    ; 3. Hard Disk Controller Sector Read Sequence
+    ; -------------------------------------------------------------
+    ; Step A: Set Target Sector Number (Sector #1) -> MMIO_DISK_SECTOR (0xFF010)
+    mov r8, 0xFF010
+    mov rax, 1
+    push rax
+
+    ; Step B: Set Target Destination Buffer Address -> MMIO_DISK_ADDR (0xFF014)
+    mov r9, 0xFF014
+    mov rax, disk_buffer
+    push rax
+
+    ; Step C: Trigger Disk Read Command (1) -> MMIO_DISK_CMD (0xFF018)
+    mov r10, 0xFF018
+    mov rax, 1
+    push rax            ; Hardware fetches sector 1 directly into disk_buffer
+
+    ; -------------------------------------------------------------
+    ; 4. Direct MMIO Keyboard Hardware Register Inspection
+    ; -------------------------------------------------------------
+    mov r11, 0xFF000     ; MMIO_KEYBOARD (Raw keycode)
+    mov r12, 0xFF001     ; MMIO_KEY_STATUS (Pending status flag)
+
+    ; -------------------------------------------------------------
+    ; 5. Halt VM Execution
+    ; -------------------------------------------------------------
+    mov rax, 0
+    syscall
