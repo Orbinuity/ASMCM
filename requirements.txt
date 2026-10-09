@@ -1,2 +1,2 @@
 PyQt6==6.10.2
-AssemblyCraftCompiler==1.2.0
+AssemblyCraftCompiler==2.0.0
