@@ -19,13 +19,13 @@ jobs:
         include:
           - os: ubuntu-latest
             asset_name: asmcm-linux
-            pyinstaller_cmd: pyinstaller --onefile --icon=assets/app.png --name asmcm-linux app.py
+            pyinstaller_cmd: pyinstaller --onefile --noconsole --add-data "assets/app.png:assets" --icon=assets/app.png --name asmcm-linux app.py
           - os: macos-latest
             asset_name: asmcm-macos
-            pyinstaller_cmd: pyinstaller --onefile --icon=assets/app.icns --name asmcm-macos app.py
+            pyinstaller_cmd: pyinstaller --onefile --noconsole --add-data "assets/app.png:assets" --icon=assets/app.icns --name asmcm-macos app.py
           - os: windows-latest
             asset_name: asmcm-windows.exe
-            pyinstaller_cmd: pyinstaller --onefile --icon=assets/app.ico --name asmcm-windows app.py
+            pyinstaller_cmd: pyinstaller --onefile --noconsole --add-data "assets/app.png;assets" --icon=assets/app.ico --name asmcm-windows app.py
 
     steps:
       - name: Checkout Code
