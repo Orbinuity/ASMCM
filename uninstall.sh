@@ -22,10 +22,13 @@ if [ -f "$LOCAL_BIN" ]; then
     REMOVED=1
 fi
 
-# Clean up Linux Desktop, Mime & Icons
+# Clean up Linux Desktop launcher, MIME & Icons
 rm -f "$DESKTOP_FILE" "$MIME_FILE" "$ICON_APP" "$ICON_ASMC" "$ICON_ASMCX"
 if command -v update-mime-database >/dev/null 2>&1; then
     update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1 || true
+fi
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 fi
 
 # Clean up macOS App Bundle
@@ -39,7 +42,7 @@ if [ -d "$MAC_APP_DIR" ]; then
 fi
 
 if [ "$REMOVED" -eq 1 ]; then
-    printf "\033[0;32m[✓]\033[0m %s and file icons successfully uninstalled.\n" "$APP_NAME"
+    printf "\033[0;32m[✓]\033[0m %s, launcher icon, and file associations successfully uninstalled.\n" "$APP_NAME"
 else
     printf "\033[1;33m[!]\033[0m %s installation was not found.\n" "$APP_NAME"
 fi
