@@ -64,6 +64,22 @@ if ($UserPath -notlike "*$InstallDir*") {
     Write-Warn "PATH updated. Restart open terminals for changes to take effect."
 }
 
+# Create Start Menu Application Shortcut
+Write-Info "Creating Start Menu application icon..."
+try {
+    $StartMenuDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs"
+    $ShortcutPath = "$StartMenuDir\$AppName.lnk"
+    $WScriptShell = New-Object -ComObject WScript.Shell
+    $Shortcut = $WScriptShell.CreateShortcut($ShortcutPath)
+    $Shortcut.TargetPath =$TargetBinary
+    $Shortcut.IconLocation = "$AssetsDir\app.ico"
+    $Shortcut.WorkingDirectory = "$env:USERPROFILE"
+    $Shortcut.Save()
+    Write-Success "Start Menu shortcut created."
+} catch {
+    Write-Warn "Could not create Start Menu shortcut: $_"
+}
+
 # Register Registry Entries & Icons
 Write-Info "Registering .asmc and .asmcx file associations and icons..."
 try {
