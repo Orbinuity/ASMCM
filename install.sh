@@ -5,7 +5,7 @@ REPO="Orbinuity/ASMCM"
 APP_NAME="ASMCM"
 BINARY_NAME="asmcm"
 INSTALL_DIR="$HOME/.local/bin"
-INSTALLER_VERSION="1.2.0-posix"
+INSTALLER_VERSION="1.2.1-posix"
 ASSETS_URL="https://raw.githubusercontent.com/${REPO}/main/assets"
 
 BOLD=$(printf '\033[1m')
@@ -60,9 +60,9 @@ chmod +x "$TMP_DIR/$BINARY_NAME"
 mv "$TMP_DIR/$BINARY_NAME" "$TARGET_BINARY"
 success "Successfully installed ${APP_NAME} (${LATEST_TAG}) to ${INSTALL_DIR}"
 
-# --- Linux File Associations and Icons ---
+# --- Linux File Associations, Wayland Icons, and Desktop Launcher ---
 if [ "$OS_ASSET" = "linux" ]; then
-    info "Setting up icons and file associations for Linux..."
+    info "Setting up app launcher, icons, and file associations for Linux/Wayland..."
     DESKTOP_DIR="$HOME/.local/share/applications"
     MIME_DIR="$HOME/.local/share/mime/packages"
     ICON_APP_DIR="$HOME/.local/share/icons/hicolor/64x64/apps"
@@ -96,21 +96,31 @@ Type=Application
 Name=ASMCM
 Exec=$TARGET_BINARY %f
 Icon=asmcm
-Terminal=true
+Terminal=false
+StartupWMClass=asmcm
 MimeType=application/x-asmc;application/x-asmcx;
-NoDisplay=true
+Categories=Development;Utility;
 EOF
 
+    # Refresh Linux desktop and icon databases for Wayland compositors
     if command -v update-mime-database >/dev/null 2>&1; then
         update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1 || true
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
     fi
     if command -v xdg-mime >/dev/null 2>&1; then
         xdg-mime default asmcm.desktop application/x-asmc application/x-asmcx >/dev/null 2>&1 || true
     fi
-    success "File associations and icons configured."
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+    fi
+    touch "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+
+    success "App launcher, file associations, and icons configured."
 fi
 
-# --- macOS File Associations and Icons ---
+# --- macOS Application Bundle and Icons ---
 if [ "$OS_ASSET" = "macos" ]; then
     info "Setting up icons and App handler for macOS..."
     MAC_APP_DIR="$HOME/Applications/ASMCM.app"
@@ -122,11 +132,7 @@ if [ "$OS_ASSET" = "macos" ]; then
 
     cat <<EOF > "$MAC_APP_DIR/Contents/MacOS/ASMCM"
 #!/bin/sh
-if [ -n "\$1" ]; then
-    "$TARGET_BINARY" "\$1"
-else
-    "$TARGET_BINARY"
-fi
+exec "$TARGET_BINARY" "\$@"
 EOF
     chmod +x "$MAC_APP_DIR/Contents/MacOS/ASMCM"
 
