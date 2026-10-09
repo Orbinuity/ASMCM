@@ -1,0 +1,139 @@
+section .data
+    ; Data Directives: String/Byte (db), Short/Word (ds), Buffer Allocation (dm)
+    title_msg    db "=== ASMC Complete Feature Suite ==="
+    pass_msg     db "ALU & Jump Tests Passed!"
+    prompt_msg   db "Press any key to continue..."
+    video_msg    db "Syscall Video Write at (12, 6)"
+    
+    number_var   ds 1024
+    buffer_mem   dm 64
+
+section .text
+main:
+    ; -------------------------------------------------------------
+    ; 1. SYS_CLEAR_SCREEN (rax = 4)
+    ; -------------------------------------------------------------
+    mov rax, 4
+    syscall
+
+    ; -------------------------------------------------------------
+    ; 2. SYS_SERIAL_OUT (rax = 1, rdi = string address)
+    ; -------------------------------------------------------------
+    mov rdi, title_msg
+    mov rax, 1
+    syscall
+
+    ; -------------------------------------------------------------
+    ; 3. Extended Register Set & Stack Operations
+    ; Demonstrates all registers (rax - r15) & Push/Pop
+    ; -------------------------------------------------------------
+    mov r8,  0x1000
+    mov r9,  0x2000
+    mov r10, 0x3000
+    mov r11, 0x4000
+    mov r12, 0x5000
+    mov r13, 0x6000
+    mov r14, 0x7000
+    mov r15, 0x8000
+
+    push r8
+    pop r15             ; Transfer value between registers via stack
+
+    ; -------------------------------------------------------------
+    ; 4. Full ALU Operation Suite (add, sub, mul, div, xor)
+    ; -------------------------------------------------------------
+    mov rax, 100
+    mov rbx, 50
+    add rax, rbx        ; rax = 150
+    sub rax, 30         ; rax = 120
+
+    mov rcx, 2
+    mul rax, rcx        ; rax = 240
+
+    mov rdx, 4
+    div rax, rdx        ; rax = 60
+
+    xor rsi, rsi        ; rsi = 0
+
+    ; -------------------------------------------------------------
+    ; 5. Comparison & All Conditional Jump Instructions
+    ; (cmp, je, jne, jg, jl, jge, jle, jmp)
+    ; -------------------------------------------------------------
+    mov rax, 10
+    mov rbx, 20
+
+    cmp rax, rbx
+    jl test_jl          ; Jumps if 10 < 20
+    jmp fail_exit
+
+test_jl:
+    cmp rbx, rax
+    jg test_jg          ; Jumps if 20 > 10
+    jmp fail_exit
+
+test_jg:
+    cmp rax, rax
+    je test_je          ; Jumps if 10 == 10
+    jmp fail_exit
+
+test_je:
+    cmp rax, rbx
+    jne test_jne        ; Jumps if 10 != 20
+    jmp fail_exit
+
+test_jne:
+    cmp rbx, rax
+    jge test_jge        ; Jumps if 20 >= 10
+    jmp fail_exit
+
+test_jge:
+    cmp rax, rbx
+    jle test_jle        ; Jumps if 10 <= 20
+    jmp fail_exit
+
+test_jle:
+    ; -------------------------------------------------------------
+    ; 6. Subroutine Procedure Call & Return (call, ret)
+    ; -------------------------------------------------------------
+    call print_success
+
+    ; -------------------------------------------------------------
+    ; 7. SYS_GET_TICKS (rax = 3) -> Returns uptime in ms to rax
+    ; -------------------------------------------------------------
+    mov rax, 3
+    syscall
+
+    ; -------------------------------------------------------------
+    ; 8. SYS_VIDEO_WRITE (rax = 5, rdi = msg, rsi = x, rdx = y)
+    ; -------------------------------------------------------------
+    mov rdi, video_msg
+    mov rsi, 12         ; X coordinate
+    mov rdx, 6          ; Y coordinate
+    mov rax, 5
+    syscall
+
+    ; -------------------------------------------------------------
+    ; 9. SYS_SERIAL_IN (rax = 2) -> Reads keyboard input into rax
+    ; -------------------------------------------------------------
+    mov rdi, prompt_msg
+    mov rax, 1
+    syscall
+
+    mov rax, 2
+    syscall
+
+    ; -------------------------------------------------------------
+    ; 10. SYS_HALT (rax = 0) -> CPU Power off / Halt VM
+    ; -------------------------------------------------------------
+    mov rax, 0
+    syscall
+
+print_success:
+    mov rdi, pass_msg
+    mov rax, 1
+    syscall
+    ret
+
+fail_exit:
+    mov rax, 0
+    syscall
