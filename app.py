@@ -1,5 +1,5 @@
 #!/bin/python3
-__version__ = "1.2.3"
+__version__ = "1.3.0"
 try:
     from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFontComboBox, QSpinBox, QCheckBox, QDialogButtonBox, QWidget, QPushButton, QLabel, QSplitter, QTableWidget, QTableWidgetItem, QHeaderView
     from PyQt6.QtGui import QIcon, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QFontMetrics, QAction, QKeySequence, QPainter, QImage, QTextCursor
@@ -70,7 +70,7 @@ class VirtualMachine:
         self.var_table = {}
         offset = 10
         for _ in range(var_count):
-            var_id, raw_name, val_offset, alloc_len = struct.unpack("<B16sIB", self.binary_data[offset:offset+22])
+            var_id, raw_name, val_offset, alloc_len = struct.unpack("<B16sIH", self.binary_data[offset:offset+22])
             self.var_table[var_id] = self.binary_data[val_offset : val_offset + alloc_len]
             offset += 22
 
