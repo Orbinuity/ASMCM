@@ -1,5 +1,5 @@
 #!/bin/python3
-__version__ = "1.3.2"
+__version__ = "1.4.0"
 try:
     from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFontComboBox, QSpinBox, QCheckBox, QDialogButtonBox, QWidget, QPushButton, QLabel, QSplitter, QTableWidget, QTableWidgetItem, QHeaderView
     from PyQt6.QtGui import QIcon, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QFontMetrics, QAction, QKeySequence, QPainter, QImage, QTextCursor
@@ -343,6 +343,10 @@ class VirtualMachine:
                 self._vga_write_str(x, y, text)
                 if self.video_write_callback:
                     self.video_write_callback(x, y, text)
+            elif sys_num == 6:
+                addr = self.regs[5]
+                val = self.regs[0]
+                self.write_mem(addr, val, 4)
             else:
                 _error(f"Unhandled Machine Interrupt #{sys_num} at IP: {self.ip - 1}")
 
@@ -844,6 +848,14 @@ class VMWindow(QMainWindow):
         self.reg_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.reg_table.verticalHeader().setVisible(False)
         self.reg_table.setFont(QFont("Consolas", 10))
+        self.reg_table.setStyleSheet("""
+            QTableWidget {
+                gridline-color: #cccccc;
+            }
+            QTableWidget::item {
+                padding: 2px 4px;
+            }
+        """)
         reg_layout.addWidget(self.reg_table)
 
         splitter.addWidget(reg_widget)
